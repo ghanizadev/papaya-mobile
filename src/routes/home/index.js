@@ -1,4 +1,4 @@
-import React, {useState, useContext} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -19,174 +19,118 @@ import {
   H3,
 } from 'native-base';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {StyleSheet, Image, Modal, ScrollView} from 'react-native';
+import {
+  StyleSheet,
+  Image,
+  Modal,
+  ScrollView,
+  FlatList,
+  Keyboard,
+  Alert,
+} from 'react-native';
 import {SwipeListView} from 'react-native-swipe-list-view';
 
 import cash from '../../assets/images/money.png';
 import pizza from '../../assets/images/slice.png';
 import info from '../../assets/images/info.png';
+import {TouchableHighlight} from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-community/async-storage';
+
 import {
-  TouchableHighlight,
-  TouchableOpacity,
-} from 'react-native-gesture-handler';
-7;
+  findAllTables,
+  findFlavor,
+  addProduct,
+  OpenTable,
+} from '../../functions';
+
 import {Context, Consumer} from './context';
 
-const Home = props => {
-  const [dataList, setDataList] = useState([
-    {
-      status: 'BUSY',
-      _id: '5e14b6d0cc3edb31e0ffb7c1',
-      number: '10',
-      order: {
-        costumer: 'Visitante',
-        user: 'Fg46 - Jean Felipe de Melo',
-        tableNumber: 10,
-        serviceTax: 23.1,
-        items: [
-          {
-            quantity: 1,
-            code: '12*10102090',
-            title: '12 - PIZZA SIMPLES GRANDE',
-            description: [
-              '1010 - MUSSARELA )',
-              '2090 - PORTUGUESA (SEM CEBOLA)',
-            ],
-            price: 55,
-            subtotal: 55,
-          },
-          {
-            quantity: 1,
-            code: '12*40602110',
-            title: '12 - PIZZA SIMPLES GRANDE',
-            description: [
-              '4060 - SALADA MISTA )',
-              '2110 - SARDINHA (SEM MUSSARELA)',
-            ],
-            price: 55,
-            subtotal: 55,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '10*1010',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1010 - MUSSARELA (jcycjycjtycty)'],
-            price: 33,
-            subtotal: 33,
-          },
-          {
-            quantity: 1,
-            code: '12*1010',
-            title: '12 - PIZZA SIMPLES GRANDE',
-            description: ['1010 - MUSSARELA (SEM TOMATE)'],
-            price: 55,
-            subtotal: 55,
-          },
-          {
-            quantity: 1,
-            code: '10*1070',
-            title: '10 - PIZZA SIMPLES PEQUENA',
-            description: ['1070 - ANITA'],
-            price: 33,
-            subtotal: 33,
-          },
-        ],
-        total: 231,
-        final: 254.1,
-        paid: 0,
-        remaining: 254.1,
-        change: 0,
-        payments: [],
-        deliver: false,
-        closed: false,
-        _id: '5e0f7f7c8126b34ef07a08fb',
-        orderId: 'TnO4jh',
-        createdAt: '2020-01-03T17:53:00.611Z',
-        updatedAt: '2020-01-06T20:38:46.557Z',
-        __v: 49,
-      },
-      createdAt: '2020-01-03T17:53:00.612Z',
-    },
-  ]);
+const formatTime = time => {
+  let factor = new Date().getTime() - new Date(time).getTime();
+  factor = factor / 60000;
+  console.log(factor);
 
+  if (factor <= 1) {
+    return 'menos de um minuto';
+  } else if (factor <= 2) {
+    return '< 2 min';
+  } else if (factor <= 3) {
+    return '< 3 min';
+  } else if (factor <= 5) {
+    return '< 5 min';
+  } else if (factor <= 10) {
+    return '< 10 min';
+  } else if (factor <= 15) {
+    return '< 15 min';
+  } else if (factor <= 20) {
+    return '< 20 min';
+  } else if (factor <= 25) {
+    return '< 25 min';
+  } else if (factor <= 30) {
+    return '< 30 min';
+  } else if (factor <= 35) {
+    return '< 35 min';
+  } else if (factor <= 40) {
+    return '< 40 min';
+  } else if (factor <= 45) {
+    return '< 45 min';
+  } else if (factor <= 50) {
+    return '< 50 min';
+  } else if (factor <= 55) {
+    return '< 55 min';
+  } else if (factor <= 60) {
+    return '< uma hora';
+  } else if (factor > 60) {
+    return 'mais de uma hora';
+  } else if (factor > 90) {
+    return 'mais de 1h30min';
+  } else if (factor > 120) {
+    return 'mais de 2h';
+  }
+};
+
+const Home = props => {
+  const [dataList, setDataList] = useState([]);
   const [active, setActive] = useState(false);
+  const [timer, setTimer] = useState();
   const {navigation} = props;
   const [overlayConfig, setOverlayConfig] = useState({
     visible: false,
     component: <View />,
   });
+
+  const updateTables = () => {
+    if (global.updatable) {
+      AsyncStorage.getItem('token')
+        .then(result => {
+          findAllTables(result).then(tables => {
+            if (result !== dataList) {
+              setDataList(tables.data);
+            }
+          });
+        })
+        .catch(error => {
+          Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+        });
+    }
+  };
+
+  useEffect(() => {
+    global.updatable = true;
+
+    updateTables();
+
+    const t = setInterval(() => {
+      if (global.updatable) {
+        updateTables();
+      }
+    }, 5000);
+
+    setTimer(t);
+
+    return clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -217,9 +161,9 @@ const Home = props => {
                 <Text style={styles.title}>{`${data.item.number}.${
                   data.item.order.costumer
                 }`}</Text>
-                <Text style={styles.subtitle}>{`Aberta há ${
-                  data.item.createdAt
-                }`}</Text>
+                <Text style={styles.subtitle}>
+                  Aberta há {formatTime(data.item.createdAt)}
+                </Text>
               </View>
               <View>
                 <Text style={styles.total}>Total: </Text>
@@ -240,9 +184,11 @@ const Home = props => {
                     component: (
                       <ShowDetails
                         order={data.item.order}
-                        close={() =>
-                          setOverlayConfig({...overlayConfig, visible: false})
-                        }
+                        close={() => {
+                          setOverlayConfig({...overlayConfig, visible: false});
+                          updateTables();
+                          global.updatable = true;
+                        }}
                       />
                     ),
                   });
@@ -252,13 +198,17 @@ const Home = props => {
               <Button
                 style={styles.add}
                 onPress={() => {
+                  global.updatable = false;
                   setOverlayConfig({
                     visible: true,
                     component: (
                       <AddProducts
-                        close={() =>
-                          setOverlayConfig({...overlayConfig, visible: false})
-                        }
+                        order={data.item.order}
+                        close={() => {
+                          setOverlayConfig({...overlayConfig, visible: false});
+                          updateTables();
+                          global.updatable = true;
+                        }}
                       />
                     ),
                   });
@@ -291,13 +241,16 @@ const Home = props => {
         <TouchableHighlight
           style={styles.fabbutton}
           onPress={() => {
+            global.updatable = false;
             setOverlayConfig({
               visible: true,
               component: (
                 <NewOrder
-                  close={() =>
-                    setOverlayConfig({...overlayConfig, visible: false})
-                  }
+                  close={() => {
+                    setOverlayConfig({...overlayConfig, visible: false});
+                    updateTables();
+                    global.updatable = true;
+                  }}
                 />
               ),
             });
@@ -322,8 +275,25 @@ const Overlay = props => {
 };
 
 const NewOrder = props => {
-  const [tables, setTables] = useState(['1', '2', '3']);
+  const [tables, setTables] = useState([
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+    '13',
+    '14',
+    '15',
+  ]);
   const [currentTable, setCurrentTable] = useState(1);
+  const [currentCostumer, setCurrentCostumer] = useState('');
 
   const {close} = props;
 
@@ -346,11 +316,37 @@ const NewOrder = props => {
             </Item>
             <Item fixedLabel>
               <Label>Cliente</Label>
-              <Input placeholder="Visitante" />
+              <Input
+                value={currentCostumer}
+                onChangeText={setCurrentCostumer}
+                placeholder="Visitante"
+              />
             </Item>
           </Form>
         </Content>
-        <Button rounded style={styles.opentablebutton}>
+        <Button
+          rounded
+          style={styles.opentablebutton}
+          onPress={() => {
+            AsyncStorage.getItem('token').then(result => {
+              OpenTable(result, currentTable, currentCostumer)
+                .then(openTable => {
+                  Alert.alert(
+                    'Sucesso!',
+                    `Mesa aberta com o pedido ID: ${openTable.data.orderId}.`,
+                  );
+                  close();
+                })
+                .catch(error => {
+                  console.log(error);
+                  Alert.alert(
+                    'Erro',
+                    'Erro ao abrir mesa, provavelmente ela já está aberta: ' +
+                      currentTable,
+                  );
+                });
+            });
+          }}>
           <Text>Abrir</Text>
         </Button>
       </Container>
@@ -367,7 +363,9 @@ const ShowDetails = props => {
     <View style={styles.showdetailscontent}>
       <H1>Detalhes</H1>
       <H3>Pedido ID: {order.orderId}</H3>
-      <Text style={styles.showdetailsdate}>Data: {order.createdAt}</Text>
+      <Text style={styles.showdetailsdate}>
+        {new Date(order.createdAt).toLocaleTimeString()}
+      </Text>
 
       <ScrollView style={styles.showdetailsdescription}>
         <View style={styles.showdetailsitem}>
@@ -377,11 +375,14 @@ const ShowDetails = props => {
           <Text>Produtos</Text>
         </View>
         {order.items &&
-          order.items.map((item, index) => {
-            return (
+          order.items.map((item, index) => (
+            <View>
               <Text key={index}>{`    ${item.quantity}x ${item.title}`}</Text>
-            );
-          })}
+              <Text style={styles.showdetailsdate}>
+                {item.description.join(', ')}
+              </Text>
+            </View>
+          ))}
         <View style={styles.showdetailsitem}>
           <Text>Total de produtos:</Text>
           <Text>
@@ -422,6 +423,7 @@ const ShowDetails = props => {
 };
 
 const AddProducts = props => {
+  const {order} = props;
   const [group, setGroup] = useState('');
   const [title, setTitle] = useState('Escolha o que deseja:');
   const {close} = props;
@@ -431,11 +433,17 @@ const AddProducts = props => {
       case 'Pizza':
         return <Pizza />;
       case 'Pizza Grande':
-        return <Flavor max={3} />;
+        return <Flavor max={3} pizzaCode={'12'} {...props} />;
       case 'Pizza Média':
-        return <Flavor max={3} />;
+        return <Flavor max={3} pizzaCode={'11'} {...props} />;
       case 'Pizza Pequena':
-        return <Flavor max={2} />;
+        return <Flavor max={2} pizzaCode={'10'} {...props} />;
+      case 'Pizza Grande Especial':
+        return <Flavor max={3} pizzaCode={'21'} {...props} special />;
+      case 'Pizza Média Especial':
+        return <Flavor max={3} pizzaCode={'22'} {...props} special />;
+      case 'Pizza Pequena Especial':
+        return <Flavor max={2} pizzaCode={'23'} {...props} special />;
       case 'Escolha o que deseja:':
         return <Pick />;
       default:
@@ -445,53 +453,108 @@ const AddProducts = props => {
 
   const Pizza = props => {
     return (
-      <View>
-        <View style={styles.pizzasizes}>
-          <Button
-            transparent
-            style={styles.pizzaitem}
-            onPress={() => {
-              setTitle('Pizza Grande');
-            }}>
-            <View>
-              <Image
-                source={require('../../assets/images/pizza.png')}
-                style={styles.pizzalarge}
-              />
-              <Text style={styles.center}>Pizza Grande</Text>
-              <Text style={styles.center}>com até 3 sabores (12 fatias)</Text>
-              <Text style={styles.center}>R$ 55,00</Text>
+      <View style={{height: '100%', width: '100%'}}>
+        <ScrollView style={{height: '100%', width: '100%'}}>
+          <View style={styles.pizzasizes}>
+            <View style={styles.separator}>
+              <Text>Pizzas Simples</Text>
             </View>
-          </Button>
-          <Button
-            transparent
-            style={styles.pizzaitem}
-            onPress={() => setTitle('Pizza Média')}>
-            <View>
-              <Image
-                source={require('../../assets/images/pizza.png')}
-                style={styles.pizzamedium}
-              />
-              <Text style={styles.center}>Pizza Média</Text>
-              <Text style={styles.center}>com até 3 sabores (9 fatias)</Text>
-              <Text style={styles.center}>R$ 44,00</Text>
+
+            <Button
+              transparent
+              style={styles.pizzaitem}
+              onPress={() => {
+                setTitle('Pizza Grande');
+              }}>
+              <View>
+                <Image
+                  source={require('../../assets/images/pizza.png')}
+                  style={styles.pizzalarge}
+                />
+                <Text style={styles.center}>Pizza Grande</Text>
+                <Text style={styles.center}>com até 3 sabores (12 fatias)</Text>
+                <Text style={styles.center}>R$ 55,00</Text>
+              </View>
+            </Button>
+            <Button
+              transparent
+              style={styles.pizzaitem}
+              onPress={() => setTitle('Pizza Média')}>
+              <View>
+                <Image
+                  source={require('../../assets/images/pizza.png')}
+                  style={styles.pizzamedium}
+                />
+                <Text style={styles.center}>Pizza Média</Text>
+                <Text style={styles.center}>com até 3 sabores (9 fatias)</Text>
+                <Text style={styles.center}>R$ 44,00</Text>
+              </View>
+            </Button>
+            <Button
+              transparent
+              style={styles.pizzaitem}
+              onPress={() => setTitle('Pizza Pequena')}>
+              <View>
+                <Image
+                  source={require('../../assets/images/pizza.png')}
+                  style={styles.pizzasmall}
+                />
+                <Text style={styles.center}>Pizza Pequena</Text>
+                <Text style={styles.center}>com até 2 sabores (8 fatias)</Text>
+                <Text style={styles.center}>R$ 33,00</Text>
+              </View>
+            </Button>
+
+            <View style={styles.separator}>
+              <Text>Pizzas Especiais</Text>
             </View>
-          </Button>
-          <Button
-            transparent
-            style={styles.pizzaitem}
-            onPress={() => setTitle('Pizza Pequena')}>
-            <View>
-              <Image
-                source={require('../../assets/images/pizza.png')}
-                style={styles.pizzasmall}
-              />
-              <Text style={styles.center}>Pizza Pequena</Text>
-              <Text style={styles.center}>com até 2 sabores (8 fatias)</Text>
-              <Text style={styles.center}>R$ 33,00</Text>
-            </View>
-          </Button>
-        </View>
+
+            <Button
+              transparent
+              style={styles.pizzaitem}
+              onPress={() => {
+                setTitle('Pizza Grande Especial');
+              }}>
+              <View>
+                <Image
+                  source={require('../../assets/images/pizza.png')}
+                  style={styles.pizzalarge}
+                />
+                <Text style={styles.center}>Pizza Grande Especial</Text>
+                <Text style={styles.center}>com até 3 sabores (12 fatias)</Text>
+                <Text style={styles.center}>R$ 55,00</Text>
+              </View>
+            </Button>
+            <Button
+              transparent
+              style={styles.pizzaitem}
+              onPress={() => setTitle('Pizza Média Especial')}>
+              <View>
+                <Image
+                  source={require('../../assets/images/pizza.png')}
+                  style={styles.pizzamedium}
+                />
+                <Text style={styles.center}>Pizza Média Especial</Text>
+                <Text style={styles.center}>com até 3 sabores (9 fatias)</Text>
+                <Text style={styles.center}>R$ 44,00</Text>
+              </View>
+            </Button>
+            <Button
+              transparent
+              style={styles.pizzaitem}
+              onPress={() => setTitle('Pizza Pequena Especial')}>
+              <View>
+                <Image
+                  source={require('../../assets/images/pizza.png')}
+                  style={styles.pizzasmall}
+                />
+                <Text style={styles.center}>Pizza Pequena Especial</Text>
+                <Text style={styles.center}>com até 2 sabores (8 fatias)</Text>
+                <Text style={styles.center}>R$ 33,00</Text>
+              </View>
+            </Button>
+          </View>
+        </ScrollView>
       </View>
     );
   };
@@ -516,7 +579,7 @@ const AddProducts = props => {
         <Button transparent style={{flex: 1, width: '100%'}}>
           <View>
             <Image
-              source={require('../../assets/images/wine.png')}
+              source={require('../../assets/images/juice.png')}
               style={styles.pickicon}
             />
             <Text style={styles.center}>Outros</Text>
@@ -527,11 +590,200 @@ const AddProducts = props => {
   };
 
   const Flavor = props => {
-    const {max} = props;
+    const {max, pizzaCode, close} = props;
+    const [selectedFlavors, setSelectedFlavors] = useState([]);
+    const [currentAditionals, setCurrentAditionals] = useState([]);
+    const [currentAditional, setCurrentAditional] = useState('');
+    const [flavorAditionals, setFlavorAditionals] = useState([]);
+    const [modal, setModal] = useState({visible: false, componen: <View />});
+    const [flavor, setFlavor] = useState();
+    const [searchResult, setSearchResult] = useState([]);
+
     return (
-      <View>
-        <Text>Escolha os sabores:</Text>
-        <Text style={styles.showdetailsdate}>(no máximo {max} sabores)</Text>
+      <View style={{flex: 1, width: '100%'}}>
+        <Text style={{alignSelf: 'center'}}>Escolha os sabores:</Text>
+        <Text style={{...styles.showdetailsdate, alignSelf: 'center'}}>
+          (no máximo {max} sabores)
+        </Text>
+        <FlatList
+          style={styles.pizzaflavortags}
+          data={selectedFlavors}
+          keyExtractor={item => item.code}
+          ListEmptyComponent={() => (
+            <Text style={styles.showdetailsdate}>
+              Nenhum sabor selecionado.
+            </Text>
+          )}
+          renderItem={({item}) => (
+            <View style={styles.tagitem}>
+              <Text>{item.name}</Text>
+              <Button
+                transparent
+                style={styles.tagclosebutton}
+                onPress={() =>
+                  setSelectedFlavors(
+                    selectedFlavors.filter(flavor => flavor.code !== item.code),
+                  )
+                }>
+                <Icon name="times" size={16} color="#333" />
+              </Button>
+            </View>
+          )}
+        />
+        <Input
+          clearButtonMode="always"
+          clearTextOnFocus
+          placeholder="Pesquise o sabor..."
+          style={styles.pizzaflavorsearch}
+          onChangeText={text => {
+            if (text !== '') {
+              AsyncStorage.getItem('token')
+                .then(result => {
+                  findFlavor(result, text).then(flavors => {
+                    setSearchResult(flavors.data);
+                  });
+                })
+                .catch(error => {
+                  console.log(error);
+                  Alert.alert('Erro', 'error ao atualizar lista de sabores');
+                });
+            } else {
+              setSearchResult([]);
+            }
+          }}
+        />
+        <FlatList
+          data={searchResult}
+          keyExtractor={item => item.code}
+          renderItem={({item}) => {
+            return (
+              <Button
+                transparent
+                style={styles.flavorlistitem}
+                onPress={() => {
+                  setModal({visible: true});
+                  setFlavor(item);
+                }}>
+                <Text style={styles.flavorlistitemtext}>{`${item.code} - ${
+                  item.name
+                }${
+                  item.variation !== 'UNICO' ? ` (${item.variation})` : ''
+                }`}</Text>
+              </Button>
+            );
+          }}
+        />
+        <Modal visible={modal.visible} transparent>
+          <View style={styles.modalcontainer}>
+            <View style={styles.flavorcontainer}>
+              <H3>{flavor && `${flavor.code} - ${flavor.name}`}</H3>
+              <Text style={styles.showdetailsdate}>
+                Ingredientes:{' '}
+                {flavor &&
+                  flavor.description.map((item, index, arr) => {
+                    if (arr.length === index + 2) {
+                      return `${item} E `;
+                    } else if (arr.length === index + 1) {
+                      return `${item}.`;
+                    }
+                    return `${item}, `;
+                  })}
+              </Text>
+              <FlatList
+                data={currentAditionals}
+                style={styles.tagcontainer}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({item}) => (
+                  <View style={styles.tagitem}>
+                    <Text>{item}</Text>
+                    <Button
+                      transparent
+                      style={styles.tagclosebutton}
+                      onPress={() =>
+                        setCurrentAditionals(
+                          currentAditionals.filter(
+                            aditional => aditional !== item,
+                          ),
+                        )
+                      }>
+                      <Icon name="times" size={16} color="#333" />
+                    </Button>
+                  </View>
+                )}
+              />
+              <Input
+                style={styles.pizzaflavorsearch}
+                placeholder="Insira adicionais..."
+                value={currentAditional}
+                onChangeText={setCurrentAditional}
+                onEndEditing={e => {
+                  if (e.nativeEvent.text === '') {
+                    return;
+                  }
+                  const aditionals =
+                    currentAditionals != null ? currentAditionals : [];
+                  aditionals.push(currentAditional.toLocaleUpperCase());
+                  setCurrentAditional('');
+                  setCurrentAditionals(aditionals);
+                }}
+              />
+              <Button
+                style={styles.opentablebutton}
+                onPress={() => {
+                  const current = selectedFlavors || [];
+                  const add = flavorAditionals || [];
+
+                  if (current.find(item => item === flavor) != null) {
+                    Alert.alert('Erro', 'sabor já adicionado');
+                    return;
+                  }
+                  current.push(flavor);
+                  setSelectedFlavors(current);
+
+                  currentAditionals.forEach(item => {
+                    add.push(`${flavor.code}:${item}`);
+                  });
+                  setFlavorAditionals(add);
+
+                  setModal({visible: false});
+                  return;
+                }}>
+                <Text>Adicionar</Text>
+              </Button>
+              <Button
+                style={styles.closebutton}
+                onPress={() => setModal({visible: false})}>
+                <Icon name="times" size={12} color="#fff" />
+              </Button>
+            </View>
+          </View>
+        </Modal>
+        <Button
+          style={styles.opentablebutton}
+          onPress={() => {
+            let flavors = '';
+            selectedFlavors.forEach(flavor => {
+              flavors += flavor.code;
+            });
+            const product = {
+              code: `${pizzaCode}*${flavors}`,
+              quantity: 1,
+              aditionals: flavorAditionals,
+            };
+            console.log(order.orderId);
+            console.log(product);
+            AsyncStorage.getItem('token').then(result => {
+              addProduct(result, order.orderId, [product])
+                .then(load => console.log(load.data))
+                .catch(error => {
+                  console.log(error.data);
+                  Alert.alert('Erro', 'Erro ao salvar o produto');
+                });
+            });
+            close();
+          }}>
+          <Text>Adicionar produto</Text>
+        </Button>
       </View>
     );
   };
@@ -676,7 +928,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
   },
   addproductscontent: {
-    padding: 50,
+    paddingVertical: 30,
+    paddingHorizontal: 10,
     borderRadius: 5,
     elevation: 5,
     width: '85%',
@@ -710,17 +963,87 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column',
-    marginVertical: 8,
+    marginVertical: 15,
     height: 120,
+    width: '100%',
   },
   pizzasizes: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column',
+    width: '100%',
+  },
+  pizzaflavorsearch: {
+    borderColor: 'whitesmoke',
+    borderWidth: 1,
+    borderRadius: 5,
+    height: 40,
+    flex: 0,
+    width: '100%',
+    marginBottom: 15,
+  },
+  pizzaflavortags: {
+    maxHeight: 60,
+    borderWidth: 1,
+    borderColor: 'whitesmoke',
+    marginVertical: 8,
   },
   center: {
     textAlign: 'center',
+  },
+  separator: {
+    height: 32,
+    width: '100%',
+    backgroundColor: 'whitesmoke',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  flavorcontainer: {
+    height: '45%',
+    width: '85%',
+    position: 'relative',
+    padding: 30,
+    backgroundColor: '#fff',
+  },
+  tagcontainer: {
+    flex: 1,
+    borderRadius: 5,
+    borderColor: 'silver',
+    borderWidth: 1,
+    padding: 5,
+    marginVertical: 15,
+  },
+  tagitem: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    padding: 8,
+    borderRadius: 5,
+    borderColor: 'whitesmoke',
+    borderWidth: 1,
+  },
+  tagclosebutton: {
+    height: 30,
+    marginLeft: 3,
+  },
+  taginput: {
+    flex: 1,
+    minWidth: 30,
+    alignSelf: 'flex-start',
+  },
+  flavorlistitem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
+    borderColor: 'whitesmoke',
+    borderRadius: 5,
+    borderWidth: 1,
+    margin: 3,
+  },
+  flavorlistitemtext: {
+    color: '#777',
   },
 });
 

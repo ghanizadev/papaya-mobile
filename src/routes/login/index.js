@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   Container,
   Content,
@@ -11,11 +11,15 @@ import {
   Text,
   Button,
 } from 'native-base';
-import {Image, StyleSheet} from 'react-native';
+import {Image, StyleSheet, Alert} from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 import logo from '../../assets/images/logo.png';
+import {Login} from '../../functions';
 
 const LoginForm = props => {
   const {navigation} = props;
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   return (
     <Container style={styles.container}>
@@ -23,15 +27,15 @@ const LoginForm = props => {
 
       <Content>
         <Form>
-          <Item floatingLabel>
+          <Item fixedLabel>
             <Icon name="md-mail" />
             <Label>E-mail</Label>
-            <Input />
+            <Input keyboardType="email-address" onChangeText={setUsername} />
           </Item>
-          <Item floatingLabel last>
+          <Item fixedLabel last>
             <Icon name="md-key" />
             <Label>Senha</Label>
-            <Input secureTextEntry />
+            <Input onChangeText={setPassword} secureTextEntry />
           </Item>
         </Form>
       </Content>
@@ -39,7 +43,31 @@ const LoginForm = props => {
         <Button
           rounded
           style={styles.loginButton}
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() => {
+            Login(username, password)
+              .then(result => {
+                if (result.status === 200) {
+                  AsyncStorage.multiSet(
+                    [['user', username], ['token', result.data.access_token]],
+                    () => {
+                      navigation.navigate('Home');
+                    },
+                  );
+                } else if (result.status === 403) {
+                  Alert.alert(
+                    'Login',
+                    'Usuário e/ou senha incorretosyarn add @react-native',
+                  );
+                }
+              })
+              .catch(error => {
+                console.log(error);
+                Alert.alert(
+                  'Erro',
+                  'Servidor indisponível, contacte o administrador',
+                );
+              });
+          }}>
           <Text>Entrar</Text>
         </Button>
       </View>
