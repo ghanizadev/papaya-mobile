@@ -15,7 +15,6 @@ import {
   Input,
   Item,
   Label,
-  Picker,
   H3,
 } from 'native-base';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -25,7 +24,6 @@ import {
   Modal,
   ScrollView,
   FlatList,
-  Keyboard,
   Alert,
 } from 'react-native';
 import {SwipeListView} from 'react-native-swipe-list-view';
@@ -43,12 +41,9 @@ import {
   OpenTable,
 } from '../../functions';
 
-import {Context, Consumer} from './context';
-
 const formatTime = time => {
   let factor = new Date().getTime() - new Date(time).getTime();
   factor = factor / 60000;
-  console.log(factor);
 
   if (factor <= 1) {
     return 'menos de um minuto';
@@ -80,12 +75,11 @@ const formatTime = time => {
     return '< 55 min';
   } else if (factor <= 60) {
     return '< uma hora';
-  } else if (factor > 60) {
+  } else if (factor > 60 && factor < 120) {
     return 'mais de uma hora';
-  } else if (factor > 90) {
-    return 'mais de 1h30min';
   } else if (factor > 120) {
-    return 'mais de 2h';
+    const t = Math.floor(factor / 60);
+    return `mais de ${t}h`;
   }
 };
 
@@ -126,6 +120,7 @@ const Home = props => {
       }
     }, 5000);
 
+    AsyncStorage.setItem('timer', t.toString());
     setTimer(t);
 
     return clearInterval(timer);
@@ -156,7 +151,24 @@ const Home = props => {
           data={dataList}
           keyExtractor={item => item.order.orderId}
           renderItem={(data, rowMap) => (
-            <View style={styles.row}>
+            <Button
+              transparent
+              style={styles.row}
+              onPress={() => {
+                setOverlayConfig({
+                  visible: true,
+                  component: (
+                    <ShowDetails
+                      order={data.item.order}
+                      close={() => {
+                        setOverlayConfig({...overlayConfig, visible: false});
+                        updateTables();
+                        global.updatable = true;
+                      }}
+                    />
+                  ),
+                });
+              }}>
               <View>
                 <Text style={styles.title}>{`${data.item.number}.${
                   data.item.order.costumer
@@ -172,29 +184,10 @@ const Home = props => {
                   .toString()
                   .replace('.', ',')}`}</Text>
               </View>
-            </View>
+            </Button>
           )}
           renderHiddenItem={(data, rowMap) => (
             <View style={styles.hidden}>
-              <Button
-                style={styles.info}
-                onPress={() => {
-                  setOverlayConfig({
-                    visible: true,
-                    component: (
-                      <ShowDetails
-                        order={data.item.order}
-                        close={() => {
-                          setOverlayConfig({...overlayConfig, visible: false});
-                          updateTables();
-                          global.updatable = true;
-                        }}
-                      />
-                    ),
-                  });
-                }}>
-                <Image source={info} style={styles.icon} resizeMode="contain" />
-              </Button>
               <Button
                 style={styles.add}
                 onPress={() => {
@@ -224,7 +217,7 @@ const Home = props => {
               </Button>
             </View>
           )}
-          rightOpenValue={-240}
+          rightOpenValue={-160}
         />
         <Overlay config={overlayConfig} />
       </Container>
@@ -275,23 +268,6 @@ const Overlay = props => {
 };
 
 const NewOrder = props => {
-  const [tables, setTables] = useState([
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    '10',
-    '11',
-    '12',
-    '13',
-    '14',
-    '15',
-  ]);
   const [currentTable, setCurrentTable] = useState(1);
   const [currentCostumer, setCurrentCostumer] = useState('');
 
@@ -305,14 +281,7 @@ const NewOrder = props => {
           <Form>
             <Item fixedLabel>
               <Label>Mesa</Label>
-              <Picker
-                selectedValue={currentTable}
-                onValueChange={item => setCurrentTable(item)}>
-                {tables &&
-                  tables.map(table => (
-                    <Picker.Item key={table} label={table} value={table} />
-                  ))}
-              </Picker>
+              <Input keyboardType="number-pad" />
             </Item>
             <Item fixedLabel>
               <Label>Cliente</Label>
@@ -424,7 +393,6 @@ const ShowDetails = props => {
 
 const AddProducts = props => {
   const {order} = props;
-  const [group, setGroup] = useState('');
   const [title, setTitle] = useState('Escolha o que deseja:');
   const {close} = props;
 

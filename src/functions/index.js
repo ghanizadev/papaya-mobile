@@ -1,14 +1,18 @@
 import axios from 'axios';
 import qs from 'qs';
+import {NetworkInfo} from 'react-native-network-info';
+import AsyncStorage from '@react-native-community/async-storage';
+
+const port = '3000';
 
 export const findAllTables = token =>
-  axios.get('http://192.168.2.105:3000/api/v1/table', {
+  axios.get(`http://${global.host}:${port}/api/v1/table`, {
     headers: {Authorization: `Bearer ${token}`},
   });
 
 export const addProduct = (token, orderId, body) =>
   axios.put(
-    `http://192.168.2.105:3000/api/v1/order/addProducts?id=${orderId}`,
+    `http://${global.host}:${port}/api/v1/order/addProducts?id=${orderId}`,
     body,
     {
       headers: {
@@ -19,7 +23,7 @@ export const addProduct = (token, orderId, body) =>
   );
 
 export const findFlavor = (token, name = ' ') =>
-  axios.get(`http://192.168.2.105:3000/api/v1/flavor?q=${name}`, {
+  axios.get(`http://${global.host}:${port}/api/v1/flavor?q=${name}`, {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -33,7 +37,7 @@ export const Login = (username, password) => {
     grant_type: 'password',
   });
 
-  return axios.post('http://192.168.2.105:3000/oauth/token', body, {
+  return axios.post(`http://${global.host}:${port}/oauth/token`, body, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Accept: 'application/json',
@@ -47,7 +51,7 @@ export const Login = (username, password) => {
 
 export const OpenTable = (token, number, costumer = '') =>
   axios.post(
-    'http://192.168.2.105:3000/api/v1/order',
+    `http://${global.host}:${port}/api/v1/order`,
     {
       tableNumber: number,
       costumer: costumer,
@@ -59,3 +63,55 @@ export const OpenTable = (token, number, costumer = '') =>
       },
     },
   );
+
+export const detectHost = () =>
+  new Promise((resolve, reject) => {
+    console.log('Initializing...');
+
+    try {
+      AsyncStorage.getItem('host').then(found => {
+        axios
+          .options(`http://${found}:${port}/status`)
+          .then(result => {
+            if (result.status === 204) {
+              console.log('Server found at ', `${found}`);
+              resolve(found);
+            }
+          })
+          .catch(error => {
+            NetworkInfo.getGatewayIPAddress().then(defaultGateway => {
+              console.log('Default gateway found! => ', defaultGateway);
+              let ip = defaultGateway.split('.');
+              ip.pop();
+              ip = ip.join('.');
+
+              const recursive = number => {
+                console.log(`Trying with ${ip}.${number}:${port}...`);
+                return fetch(`http://${ip}.${number}:${port}/status`)
+                  .then(result => {
+                    if (result.status === 204) {
+                      console.log('Server found at ', `${ip}.${number}`);
+                      resolve(`${ip}.${number}`);
+                    } else if (number < 255) {
+                      console.log('failed!');
+                      recursive(number + 1);
+                    } else {
+                      reject('not found');
+                    }
+                  })
+                  .catch(() => {
+                    if (number < 255) {
+                      recursive(number + 1);
+                    } else {
+                      reject('not found');
+                    }
+                  });
+              };
+              recursive(1);
+            });
+          });
+      });
+    } catch (e) {
+      reject(e.message);
+    }
+  });

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   Container,
   Content,
@@ -14,12 +14,23 @@ import {
 import {Image, StyleSheet, Alert} from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import logo from '../../assets/images/logo.png';
-import {Login} from '../../functions';
+import {Login, detectHost} from '../../functions';
 
 const LoginForm = props => {
   const {navigation} = props;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    detectHost()
+      .then(result => {
+        global.host = result;
+        AsyncStorage.setItem('host', result);
+      })
+      .catch(error => {
+        Alert.alert(error);
+      });
+  }, []);
 
   return (
     <Container style={styles.container}>
@@ -30,7 +41,11 @@ const LoginForm = props => {
           <Item fixedLabel>
             <Icon name="md-mail" />
             <Label>E-mail</Label>
-            <Input keyboardType="email-address" onChangeText={setUsername} />
+            <Input
+              autoCapitalize="none"
+              keyboardType="email-address"
+              onChangeText={setUsername}
+            />
           </Item>
           <Item fixedLabel last>
             <Icon name="md-key" />
