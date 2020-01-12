@@ -22,13 +22,20 @@ const LoginForm = props => {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
+    AsyncStorage.getItem(['login'], (error, result) => {
+      if (result != null) {
+        const creentials = result.split(':');
+        setUsername(creentials[0]);
+        setPassword(creentials[1]);
+      }
+    });
     detectHost()
       .then(result => {
         global.host = result;
         AsyncStorage.setItem('host', result);
       })
       .catch(error => {
-        Alert.alert(error);
+        Alert.alert(error.title, error.message);
       });
   }, []);
 

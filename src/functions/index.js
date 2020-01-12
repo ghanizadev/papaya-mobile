@@ -1,7 +1,10 @@
+'use strict';
+
 import axios from 'axios';
 import qs from 'qs';
-import {NetworkInfo} from 'react-native-network-info';
+import Alert from 'react-native-prompt-android';
 import AsyncStorage from '@react-native-community/async-storage';
+import {encode, decode} from 'base-64';
 
 const port = '3000';
 
@@ -41,10 +44,7 @@ export const Login = (username, password) => {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Accept: 'application/json',
-    },
-    auth: {
-      username: 'lasolana',
-      password: 'minhamarguerita',
+      Authorization: 'Basic ' + encode('lasolana:minhamarguerita'),
     },
   });
 };
@@ -68,48 +68,38 @@ export const detectHost = () =>
   new Promise((resolve, reject) => {
     console.log('Initializing...');
 
-    try {
-      AsyncStorage.getItem('host').then(found => {
-        axios
-          .options(`http://${found}:${port}/status`)
-          .then(result => {
-            if (result.status === 204) {
-              console.log('Server found at ', `${found}`);
-              resolve(found);
-            }
-          })
-          .catch(error => {
-            NetworkInfo.getGatewayIPAddress().then(defaultGateway => {
-              console.log('Default gateway found! => ', defaultGateway);
-              let ip = defaultGateway.split('.');
-              ip.pop();
-              ip = ip.join('.');
+    const ping = ip => {
+      var init = {method: 'OPTIONS', mode: 'cors', cache: 'default'};
 
-              const recursive = number => {
-                console.log(`Trying with ${ip}.${number}:${port}...`);
-                return fetch(`http://${ip}.${number}:${port}/status`)
-                  .then(result => {
-                    if (result.status === 204) {
-                      console.log('Server found at ', `${ip}.${number}`);
-                      resolve(`${ip}.${number}`);
-                    } else if (number < 255) {
-                      console.log('failed!');
-                      recursive(number + 1);
-                    } else {
-                      reject('not found');
-                    }
-                  })
-                  .catch(() => {
-                    if (number < 255) {
-                      recursive(number + 1);
-                    } else {
-                      reject('not found');
-                    }
-                  });
-              };
-              recursive(1);
-            });
+      fetch(`http://${ip}/status`, init)
+        .then(result => {
+          if (result.status === 204) {
+            console.log('Server found at ', `${ip}`);
+            resolve(ip);
+          }
+        })
+        .catch(error => {
+          console.log('Server is currently offline, reason: ', error);
+          reject({
+            title: 'Erro de conexão',
+            message: 'Servidor está indisponível',
           });
+        });
+    };
+
+    try {
+      AsyncStorage.getItem('host', (error, found) => {
+        if (error || found == null) {
+          Alert(
+            'Servidor',
+            'Por favor, insira o código do servidor:',
+            input => {
+              ping(input);
+            },
+          );
+        } else {
+          ping(found);
+        }
       });
     } catch (e) {
       reject(e.message);
