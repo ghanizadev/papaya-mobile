@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   Container,
   Content,
@@ -15,22 +15,40 @@ import {Image, StyleSheet, Alert} from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import logo from '../../assets/images/logo.png';
 import {Login, detectHost} from '../../functions';
+import io from 'socket.io-client';
+import {Context} from '../home/context';
+import {findAllTables} from '../../functions';
 
 const LoginForm = props => {
   const {navigation} = props;
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('jf.melo6@gmail.com');
+  const [password, setPassword] = useState('tr4df2g5wp');
+
+  const state = useContext(Context);
 
   useEffect(() => {
     detectHost()
       .then(result => {
         global.host = result;
         AsyncStorage.setItem('host', result);
+        const socket = io.connect(`http://${result}:3000`);
+        socket.on('update', () => {
+          console.log('teste');
+          AsyncStorage.getItem('token')
+            .then(token => {
+              findAllTables(token).then(tables => {
+                state.setServerData(tables.data);
+              });
+            })
+            .catch(error => {
+              Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+            });
+        });
       })
       .catch(error => {
         Alert.alert(error);
       });
-  }, []);
+  }, [state]);
 
   return (
     <Container style={styles.container}>
@@ -45,12 +63,17 @@ const LoginForm = props => {
               autoCapitalize="none"
               keyboardType="email-address"
               onChangeText={setUsername}
+              value={username}
             />
           </Item>
           <Item fixedLabel last>
             <Icon name="md-key" />
             <Label>Senha</Label>
-            <Input onChangeText={setPassword} secureTextEntry />
+            <Input
+              onChangeText={setPassword}
+              value={password}
+              secureTextEntry
+            />
           </Item>
         </Form>
       </Content>
@@ -69,14 +92,11 @@ const LoginForm = props => {
                     },
                   );
                 } else if (result.status === 403) {
-                  Alert.alert(
-                    'Login',
-                    'Usuário e/ou senha incorretosyarn add @react-native',
-                  );
+                  Alert.alert('Login', 'Usuário e/ou senha incorretos');
                 }
               })
               .catch(error => {
-                console.log(error);
+                console.error(error);
                 Alert.alert(
                   'Erro',
                   'Servidor indisponível, contacte o administrador',

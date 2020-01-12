@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -30,7 +30,6 @@ import {SwipeListView} from 'react-native-swipe-list-view';
 
 import cash from '../../assets/images/money.png';
 import pizza from '../../assets/images/slice.png';
-import info from '../../assets/images/info.png';
 import {TouchableHighlight} from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-community/async-storage';
 
@@ -40,6 +39,7 @@ import {
   addProduct,
   OpenTable,
 } from '../../functions';
+import {Consumer, Context} from './context';
 
 const formatTime = time => {
   let factor = new Date().getTime() - new Date(time).getTime();
@@ -84,177 +84,151 @@ const formatTime = time => {
 };
 
 const Home = props => {
-  const [dataList, setDataList] = useState([]);
   const [active, setActive] = useState(false);
-  const [timer, setTimer] = useState();
   const {navigation} = props;
   const [overlayConfig, setOverlayConfig] = useState({
     visible: false,
     component: <View />,
   });
 
-  const updateTables = () => {
-    if (global.updatable) {
-      AsyncStorage.getItem('token')
-        .then(result => {
-          findAllTables(result).then(tables => {
-            if (result !== dataList) {
-              setDataList(tables.data);
-            }
-          });
-        })
-        .catch(error => {
-          Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
-        });
-    }
-  };
-
-  useEffect(() => {
-    global.updatable = true;
-
-    updateTables();
-
-    const t = setInterval(() => {
-      if (global.updatable) {
-        updateTables();
-      }
-    }, 5000);
-
-    AsyncStorage.setItem('timer', t.toString());
-    setTimer(t);
-
-    return clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
-    <View style={StyleSheet.absoluteFill}>
-      <Container>
-        <Header style={styles.header} androidStatusBarColor="#e39d07">
-          <Body>
-            <Title>Mesas</Title>
-          </Body>
-          <Right>
-            <Button transparent>
-              <Icon name="refresh" size={24} color="#fff" />
-            </Button>
-            <Button
-              transparent
+    <Consumer>
+      {({serverData}) => (
+        <View style={StyleSheet.absoluteFill}>
+          <Container>
+            <Header style={styles.header} androidStatusBarColor="#e39d07">
+              <Body>
+                <Title>Mesas</Title>
+              </Body>
+              <Right>
+                <Button transparent>
+                  <Icon name="refresh" size={24} color="#fff" />
+                </Button>
+                <Button
+                  transparent
+                  onPress={() => {
+                    navigation.navigate('Settings');
+                  }}>
+                  <Icon name="gear" size={24} color="#fff" />
+                </Button>
+              </Right>
+            </Header>
+            <SwipeListView
+              data={serverData}
+              keyExtractor={(item, index) =>
+                item.order.orderId || index.toString()
+              }
+              renderItem={(data, rowMap) => (
+                <Button
+                  transparent
+                  style={styles.row}
+                  onPress={() => {
+                    setOverlayConfig({
+                      visible: true,
+                      component: (
+                        <ShowDetails
+                          order={data.item.order}
+                          close={() => {
+                            setOverlayConfig({
+                              ...overlayConfig,
+                              visible: false,
+                            });
+                          }}
+                        />
+                      ),
+                    });
+                  }}>
+                  <View>
+                    <Text style={styles.title}>{`${data.item.number}.${
+                      data.item.order.costumer
+                    }`}</Text>
+                    <Text style={styles.subtitle}>
+                      Aberta há {formatTime(data.item.createdAt)}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={styles.total}>Total: </Text>
+                    <Text style={styles.price}>{`R$ ${data.item.order.final
+                      .toFixed(2)
+                      .toString()
+                      .replace('.', ',')}`}</Text>
+                  </View>
+                </Button>
+              )}
+              renderHiddenItem={(data, rowMap) => (
+                <View style={styles.hidden}>
+                  <Button
+                    style={styles.add}
+                    onPress={() => {
+                      global.updatable = false;
+                      setOverlayConfig({
+                        visible: true,
+                        component: (
+                          <AddProducts
+                            order={data.item.order}
+                            close={() => {
+                              setOverlayConfig({
+                                ...overlayConfig,
+                                visible: false,
+                              });
+                            }}
+                          />
+                        ),
+                      });
+                    }}>
+                    <Image
+                      source={pizza}
+                      style={styles.icon}
+                      resizeMode="contain"
+                    />
+                  </Button>
+                  <Button style={styles.checkout}>
+                    <Image
+                      source={cash}
+                      style={styles.icon}
+                      resizeMode="contain"
+                    />
+                  </Button>
+                </View>
+              )}
+              rightOpenValue={-160}
+            />
+            <Overlay config={overlayConfig} />
+          </Container>
+
+          <Fab
+            active={active}
+            direction="up"
+            containerStyle={{overflow: 'hidden', height: 250, padding: 8}}
+            style={styles.fab}
+            position="bottomRight"
+            onPress={() => setActive(!active)}>
+            <Icon name="plus" color="#fff" />
+
+            <TouchableHighlight
+              style={styles.fabbutton}
               onPress={() => {
-                navigation.navigate('Settings');
-              }}>
-              <Icon name="gear" size={24} color="#fff" />
-            </Button>
-          </Right>
-        </Header>
-        <SwipeListView
-          data={dataList}
-          keyExtractor={item => item.order.orderId}
-          renderItem={(data, rowMap) => (
-            <Button
-              transparent
-              style={styles.row}
-              onPress={() => {
+                global.updatable = false;
                 setOverlayConfig({
                   visible: true,
                   component: (
-                    <ShowDetails
-                      order={data.item.order}
+                    <NewOrder
                       close={() => {
                         setOverlayConfig({...overlayConfig, visible: false});
-                        updateTables();
-                        global.updatable = true;
                       }}
                     />
                   ),
                 });
               }}>
-              <View>
-                <Text style={styles.title}>{`${data.item.number}.${
-                  data.item.order.costumer
-                }`}</Text>
-                <Text style={styles.subtitle}>
-                  Aberta há {formatTime(data.item.createdAt)}
-                </Text>
-              </View>
-              <View>
-                <Text style={styles.total}>Total: </Text>
-                <Text style={styles.price}>{`R$ ${data.item.order.final
-                  .toFixed(2)
-                  .toString()
-                  .replace('.', ',')}`}</Text>
-              </View>
-            </Button>
-          )}
-          renderHiddenItem={(data, rowMap) => (
-            <View style={styles.hidden}>
-              <Button
-                style={styles.add}
-                onPress={() => {
-                  global.updatable = false;
-                  setOverlayConfig({
-                    visible: true,
-                    component: (
-                      <AddProducts
-                        order={data.item.order}
-                        close={() => {
-                          setOverlayConfig({...overlayConfig, visible: false});
-                          updateTables();
-                          global.updatable = true;
-                        }}
-                      />
-                    ),
-                  });
-                }}>
-                <Image
-                  source={pizza}
-                  style={styles.icon}
-                  resizeMode="contain"
-                />
-              </Button>
-              <Button style={styles.checkout}>
-                <Image source={cash} style={styles.icon} resizeMode="contain" />
-              </Button>
-            </View>
-          )}
-          rightOpenValue={-160}
-        />
-        <Overlay config={overlayConfig} />
-      </Container>
-
-      <Fab
-        active={active}
-        direction="up"
-        containerStyle={{overflow: 'hidden', height: 250, padding: 8}}
-        style={styles.fab}
-        position="bottomRight"
-        onPress={() => setActive(!active)}>
-        <Icon name="plus" color="#fff" />
-
-        <TouchableHighlight
-          style={styles.fabbutton}
-          onPress={() => {
-            global.updatable = false;
-            setOverlayConfig({
-              visible: true,
-              component: (
-                <NewOrder
-                  close={() => {
-                    setOverlayConfig({...overlayConfig, visible: false});
-                    updateTables();
-                    global.updatable = true;
-                  }}
-                />
-              ),
-            });
-          }}>
-          <Icon name="pencil-square-o" size={24} color="#fff" />
-        </TouchableHighlight>
-        <TouchableHighlight style={styles.fabbutton}>
-          <Icon name="user-plus" size={24} color="#fff" />
-        </TouchableHighlight>
-      </Fab>
-    </View>
+              <Icon name="pencil-square-o" size={24} color="#fff" />
+            </TouchableHighlight>
+            <TouchableHighlight style={styles.fabbutton}>
+              <Icon name="user-plus" size={24} color="#fff" />
+            </TouchableHighlight>
+          </Fab>
+        </View>
+      )}
+    </Consumer>
   );
 };
 
@@ -269,7 +243,6 @@ const Overlay = props => {
 
 const NewOrder = props => {
   const [currentTable, setCurrentTable] = useState(1);
-  const [currentCostumer, setCurrentCostumer] = useState('');
 
   const {close} = props;
 
@@ -281,15 +254,7 @@ const NewOrder = props => {
           <Form>
             <Item fixedLabel>
               <Label>Mesa</Label>
-              <Input keyboardType="number-pad" />
-            </Item>
-            <Item fixedLabel>
-              <Label>Cliente</Label>
-              <Input
-                value={currentCostumer}
-                onChangeText={setCurrentCostumer}
-                placeholder="Visitante"
-              />
+              <Input keyboardType="number-pad" onChangeText={setCurrentTable} />
             </Item>
           </Form>
         </Content>
@@ -298,7 +263,7 @@ const NewOrder = props => {
           style={styles.opentablebutton}
           onPress={() => {
             AsyncStorage.getItem('token').then(result => {
-              OpenTable(result, currentTable, currentCostumer)
+              OpenTable(result, currentTable, '')
                 .then(openTable => {
                   Alert.alert(
                     'Sucesso!',

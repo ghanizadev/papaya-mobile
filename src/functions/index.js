@@ -11,16 +11,12 @@ export const findAllTables = token =>
   });
 
 export const addProduct = (token, orderId, body) =>
-  axios.put(
-    `http://${global.host}:${port}/api/v1/order/addProducts?id=${orderId}`,
-    body,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+  axios.put(`http://${global.host}:${port}/api/v1/order/${orderId}/add`, body, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
-  );
+  });
 
 export const findFlavor = (token, name = ' ') =>
   axios.get(`http://${global.host}:${port}/api/v1/flavor?q=${name}`, {
@@ -79,6 +75,7 @@ export const detectHost = () =>
             }
           })
           .catch(error => {
+            console.log('failed! ::', error.message);
             NetworkInfo.getGatewayIPAddress().then(defaultGateway => {
               console.log('Default gateway found! => ', defaultGateway);
               let ip = defaultGateway.split('.');
@@ -96,11 +93,13 @@ export const detectHost = () =>
                       console.log('failed!');
                       recursive(number + 1);
                     } else {
+                      console.log('could not fetch, reason: ', result.text);
                       reject('not found');
                     }
                   })
-                  .catch(() => {
+                  .catch(error => {
                     if (number < 255) {
+                      console.log('could not fetch, reason: ', error);
                       recursive(number + 1);
                     } else {
                       reject('not found');

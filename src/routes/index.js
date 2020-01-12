@@ -1,8 +1,10 @@
+import React from 'react';
 import {createAppContainer, createSwitchNavigator} from 'react-navigation';
 import {createStackNavigator} from 'react-navigation-stack';
 import LoginForm from './login';
 import Settings from './settings';
 import Home from './home';
+import {Provider} from './home/context';
 
 const AppStack = createStackNavigator({
   Home: {
@@ -33,7 +35,7 @@ const AuthStack = createStackNavigator(
   },
 );
 
-export default createAppContainer(
+const Container = createAppContainer(
   createSwitchNavigator(
     {
       App: AppStack,
@@ -44,3 +46,11 @@ export default createAppContainer(
     },
   ),
 );
+
+const App = () => (
+  <Provider>
+    <Container />
+  </Provider>
+);
+
+export default App;
