@@ -1,22 +1,18 @@
 import React, {useState} from 'react';
-import {View} from 'react-native';
 
 const config = {
-  overlay: {
-    visible: false,
-    component: <View />,
-  },
-  setOverlay: () => {},
+  serverData: [{}],
+  setData: () => {},
 };
 
 const Context = React.createContext(config);
 
 const Provider = props => {
-  const setOverlay = newConfig => {
-    setState({...state, overlay: newConfig});
+  const setData = newConfig => {
+    setState({...state, serverData: newConfig});
   };
 
-  const [state, setState] = useState({...config, setOverlay});
+  const [state, setState] = useState({...config, setData});
 
   return <Context.Provider value={state}>{props.children}</Context.Provider>;
 };

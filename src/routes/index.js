@@ -1,8 +1,11 @@
 import {createAppContainer, createSwitchNavigator} from 'react-navigation';
 import {createStackNavigator} from 'react-navigation-stack';
+import React from 'react';
 import LoginForm from './login';
 import Settings from './settings';
 import Home from './home';
+import {Provider} from 'react-redux';
+import {store} from '../redux/store';
 
 const AppStack = createStackNavigator({
   Home: {
@@ -33,7 +36,7 @@ const AuthStack = createStackNavigator(
   },
 );
 
-export default createAppContainer(
+const Container = createAppContainer(
   createSwitchNavigator(
     {
       App: AppStack,
@@ -44,3 +47,13 @@ export default createAppContainer(
     },
   ),
 );
+
+const App = () => {
+  return (
+    <Provider store={store}>
+      <Container />
+    </Provider>
+  );
+};
+
+export default App;

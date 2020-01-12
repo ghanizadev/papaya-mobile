@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   Container,
   Content,
@@ -15,22 +15,43 @@ import {Image, StyleSheet, Alert} from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import logo from '../../assets/images/logo.png';
 import {Login, detectHost} from '../../functions';
+import {connect} from 'react-redux';
+import {findAllTables} from '../../functions';
+import {update} from '../../redux/actions';
+import {bindActionCreators} from 'redux';
+
+import SocketIOClient from 'socket.io-client';
+let socket;
 
 const LoginForm = props => {
   const {navigation} = props;
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('jf.melo6@gmail.com');
+  const [password, setPassword] = useState('tr4df2g5wp');
 
   useEffect(() => {
     detectHost()
       .then(result => {
         global.host = result;
+        socket = SocketIOClient.connect(`http://${result}:3000`);
+
+        socket.on('update', data => {
+          AsyncStorage.getItem('token')
+            .then(token => {
+              findAllTables(token).then(tables => {
+                props.update(tables.data);
+              });
+            })
+            .catch(error => {
+              Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+            });
+        });
+
         AsyncStorage.setItem('host', result);
       })
       .catch(error => {
         Alert.alert(error);
       });
-  }, []);
+  }, [props]);
 
   return (
     <Container style={styles.container}>
@@ -44,13 +65,18 @@ const LoginForm = props => {
             <Input
               autoCapitalize="none"
               keyboardType="email-address"
+              value={username}
               onChangeText={setUsername}
             />
           </Item>
           <Item fixedLabel last>
             <Icon name="md-key" />
             <Label>Senha</Label>
-            <Input onChangeText={setPassword} secureTextEntry />
+            <Input
+              onChangeText={setPassword}
+              value={password}
+              secureTextEntry
+            />
           </Item>
         </Form>
       </Content>
@@ -65,14 +91,12 @@ const LoginForm = props => {
                   AsyncStorage.multiSet(
                     [['user', username], ['token', result.data.access_token]],
                     () => {
+                      socket.emit('update', '');
                       navigation.navigate('Home');
                     },
                   );
                 } else if (result.status === 403) {
-                  Alert.alert(
-                    'Login',
-                    'Usuário e/ou senha incorretosyarn add @react-native',
-                  );
+                  Alert.alert('Login', 'Usuário e/ou senha incorretos');
                 }
               })
               .catch(error => {
@@ -117,4 +141,20 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginForm;
+const mapStateToProps = state => {
+  const {data} = state;
+  return {data};
+};
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(
+    {
+      update,
+    },
+    dispatch,
+  );
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(LoginForm);

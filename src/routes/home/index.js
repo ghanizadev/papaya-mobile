@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -30,9 +30,11 @@ import {SwipeListView} from 'react-native-swipe-list-view';
 
 import cash from '../../assets/images/money.png';
 import pizza from '../../assets/images/slice.png';
-import info from '../../assets/images/info.png';
 import {TouchableHighlight} from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-community/async-storage';
+import {connect} from 'react-redux';
+import {update} from '../../redux/actions';
+import {bindActionCreators} from 'redux';
 
 import {
   findAllTables,
@@ -86,7 +88,6 @@ const formatTime = time => {
 const Home = props => {
   const [dataList, setDataList] = useState([]);
   const [active, setActive] = useState(false);
-  const [timer, setTimer] = useState();
   const {navigation} = props;
   const [overlayConfig, setOverlayConfig] = useState({
     visible: false,
@@ -111,19 +112,7 @@ const Home = props => {
 
   useEffect(() => {
     global.updatable = true;
-
     updateTables();
-
-    const t = setInterval(() => {
-      if (global.updatable) {
-        updateTables();
-      }
-    }, 5000);
-
-    AsyncStorage.setItem('timer', t.toString());
-    setTimer(t);
-
-    return clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -147,9 +136,10 @@ const Home = props => {
             </Button>
           </Right>
         </Header>
+
         <SwipeListView
-          data={dataList}
-          keyExtractor={item => item.order.orderId}
+          data={props.data}
+          keyExtractor={(item, index) => item.order.orderId || index}
           renderItem={(data, rowMap) => (
             <Button
               transparent
@@ -161,8 +151,10 @@ const Home = props => {
                     <ShowDetails
                       order={data.item.order}
                       close={() => {
-                        setOverlayConfig({...overlayConfig, visible: false});
-                        updateTables();
+                        setOverlayConfig({
+                          ...overlayConfig,
+                          visible: false,
+                        });
                         global.updatable = true;
                       }}
                     />
@@ -198,8 +190,10 @@ const Home = props => {
                       <AddProducts
                         order={data.item.order}
                         close={() => {
-                          setOverlayConfig({...overlayConfig, visible: false});
-                          updateTables();
+                          setOverlayConfig({
+                            ...overlayConfig,
+                            visible: false,
+                          });
                           global.updatable = true;
                         }}
                       />
@@ -219,6 +213,7 @@ const Home = props => {
           )}
           rightOpenValue={-160}
         />
+
         <Overlay config={overlayConfig} />
       </Container>
 
@@ -241,7 +236,6 @@ const Home = props => {
                 <NewOrder
                   close={() => {
                     setOverlayConfig({...overlayConfig, visible: false});
-                    updateTables();
                     global.updatable = true;
                   }}
                 />
@@ -345,7 +339,7 @@ const ShowDetails = props => {
         </View>
         {order.items &&
           order.items.map((item, index) => (
-            <View>
+            <View key={index}>
               <Text key={index}>{`    ${item.quantity}x ${item.title}`}</Text>
               <Text style={styles.showdetailsdate}>
                 {item.description.join(', ')}
@@ -1015,4 +1009,20 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Home;
+const mapStateToProps = state => {
+  const {data} = state;
+  return {data};
+};
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(
+    {
+      update,
+    },
+    dispatch,
+  );
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Home);
