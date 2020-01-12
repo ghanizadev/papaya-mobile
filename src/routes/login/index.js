@@ -27,22 +27,26 @@ const LoginForm = props => {
   const state = useContext(Context);
 
   useEffect(() => {
+    const fetchTables = () => {
+      AsyncStorage.getItem('token')
+        .then(token => {
+          findAllTables(token).then(tables => {
+            state.setServerData(tables.data);
+          });
+        })
+        .catch(error => {
+          Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+        });
+    };
+
     detectHost()
       .then(result => {
         global.host = result;
         AsyncStorage.setItem('host', result);
+
         const socket = io.connect(`http://${result}:3000`);
         socket.on('update', () => {
-          console.log('teste');
-          AsyncStorage.getItem('token')
-            .then(token => {
-              findAllTables(token).then(tables => {
-                state.setServerData(tables.data);
-              });
-            })
-            .catch(error => {
-              Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
-            });
+          fetchTables();
         });
       })
       .catch(error => {
@@ -99,7 +103,9 @@ const LoginForm = props => {
                 console.error(error);
                 Alert.alert(
                   'Erro',
-                  'Servidor indisponível, contacte o administrador',
+                  'Servidor indisponível, contacte o administrador (' +
+                    error +
+                    ')',
                 );
               });
           }}>
