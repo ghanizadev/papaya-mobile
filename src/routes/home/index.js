@@ -91,6 +91,21 @@ const Home = props => {
     component: <View />,
   });
 
+  const state = useContext(Context);
+
+  useEffect(() => {
+    AsyncStorage.getItem('token')
+      .then(token => {
+        findAllTables(token).then(tables => {
+          state.setServerData(tables.data);
+        });
+      })
+      .catch(() => {
+        Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <Consumer>
       {({serverData}) => (

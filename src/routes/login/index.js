@@ -34,7 +34,7 @@ const LoginForm = props => {
             state.setServerData(tables.data);
           });
         })
-        .catch(error => {
+        .catch(() => {
           Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
         });
     };
@@ -43,14 +43,16 @@ const LoginForm = props => {
       .then(result => {
         global.host = result;
         AsyncStorage.setItem('host', result);
+        
+        const socket = io.connect(`http://${result}`);
 
-        const socket = io.connect(`http://${result}:3000`);
         socket.on('update', () => {
+          console.log('Updating....');
           fetchTables();
         });
       })
       .catch(error => {
-        Alert.alert(error);
+        Alert.alert(error.title, error.message);
       });
   }, [state]);
 
