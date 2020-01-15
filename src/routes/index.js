@@ -4,11 +4,18 @@ import {createStackNavigator} from 'react-navigation-stack';
 import LoginForm from './login';
 import Settings from './settings';
 import Home from './home';
-import {Provider} from './home/context';
+import Tables from './tables';
+import {Provider} from '../context';
 
 const AppStack = createStackNavigator({
   Home: {
     screen: Home,
+    navigationOptions: {
+      headerShown: false,
+    },
+  },
+  Tables: {
+    screen: Tables,
     navigationOptions: {
       headerShown: false,
     },

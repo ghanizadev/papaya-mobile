@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import logo from '../../assets/images/logo.png';
 import {Login, detectHost} from '../../functions';
 import io from 'socket.io-client';
-import {Context} from '../home/context';
+import {Context} from '../../context';
 import {findAllTables} from '../../functions';
 
 const LoginForm = props => {

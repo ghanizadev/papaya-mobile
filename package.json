@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android && react-native start",
+    "release": "react-native run-android --variant=release",
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
@@ -17,6 +18,7 @@
     "base-64": "^0.1.0",
     "btoa": "^1.2.1",
     "buffer": "^5.4.3",
+    "json-loader": "^0.5.7",
     "native-base": "^2.13.8",
     "qs": "^6.9.1",
     "react": "16.9.0",
@@ -41,10 +43,11 @@
     "babel-jest": "^24.9.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb": "^18.0.1",
-    "eslint-plugin-import": "^2.19.1",
+    "eslint-plugin-import": "^2.20.0",
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.17.0",
     "eslint-plugin-react-hooks": "^1.7.0",
+    "eslint-plugin-react-native": "^3.8.1",
     "jest": "^24.9.0",
     "metro-react-native-babel-preset": "^0.57.0",
     "react-test-renderer": "16.9.0"
