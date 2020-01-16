@@ -488,6 +488,7 @@ const AddProducts = props => {
     const [modal, setModal] = useState({visible: false, componen: <View />});
     const [flavor, setFlavor] = useState();
     const [searchResult, setSearchResult] = useState([]);
+    const [searchString, setSearchString] = useState('');
 
     return (
       <View style={{flex: 1, width: '100%'}}>
@@ -497,6 +498,8 @@ const AddProducts = props => {
         </Text>
         <FlatList
           style={styles.pizzaflavortags}
+          containerStyle={styles.pizzaflavortagscontainer}
+          horizontal
           data={selectedFlavors}
           keyExtractor={item => item.code}
           ListEmptyComponent={() => (
@@ -524,11 +527,12 @@ const AddProducts = props => {
           clearTextOnFocus
           placeholder="Pesquise o sabor..."
           style={styles.pizzaflavorsearch}
-          onChangeText={text => {
-            if (text !== '') {
+          onChangeText={setSearchString}
+          onEndEditing={()=> {
+            if (searchString !== '') {
               AsyncStorage.getItem('token')
                 .then(result => {
-                  findFlavor(result, text).then(flavors => {
+                  findFlavor(result, searchString).then(flavors => {
                     setSearchResult(flavors.data);
                   });
                 })
@@ -823,8 +827,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 5,
     elevation: 5,
-    width: '85%',
-    height: '75%',
+    width: '95%',
+    height: '95%',
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
@@ -880,6 +884,11 @@ const styles = StyleSheet.create({
     borderColor: 'whitesmoke',
     marginVertical: 8,
   },
+  pizzaflavortagscontainer: {
+    alignContent: 'center',
+    alignItems: 'center',
+    height: '100%'
+  },
   center: {
     textAlign: 'center',
   },
@@ -891,11 +900,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   flavorcontainer: {
-    height: '45%',
-    width: '85%',
+    height: '100%',
+    width: '100%',
     position: 'relative',
     padding: 30,
     backgroundColor: '#fff',
+    elevation: 5
   },
   tagcontainer: {
     flex: 1,

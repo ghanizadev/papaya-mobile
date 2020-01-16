@@ -66,7 +66,7 @@ export const detectHost = () => new Promise((resolve, reject) => {
 
     fetch(`http://${ip}/status`, init)
       .then((result) => {
-        if (result.status === 204) {
+        if (result.status === 200) {
           console.log('Server found at ', `${ip}`);
           resolve(ip);
         }
