@@ -102,7 +102,7 @@ const Home = props => {
             <Button
             rounded
             style={styles.mainbutton}
-              onPress={()=> {props.navigation.navigate("Tables")}}
+              onPress={()=> {props.navigation.navigate("Deliveries")}}
             ><Text style={styles.mainbuttontext}>Acompanhar Entrega</Text>
             </Button>
 

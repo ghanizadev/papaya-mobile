@@ -22,7 +22,7 @@ import {findAllTables} from '../../functions';
 const LoginForm = props => {
   const {navigation} = props;
   const [username, setUsername] = useState('jf.melo6@gmail.com');
-  const [password, setPassword] = useState('tr4df2g5wp');
+  const [password, setPassword] = useState('td4df2g5wp');
 
   const state = useContext(Context);
 

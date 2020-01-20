@@ -3,6 +3,7 @@ import {createAppContainer, createSwitchNavigator} from 'react-navigation';
 import {createStackNavigator} from 'react-navigation-stack';
 import LoginForm from './login';
 import Settings from './settings';
+import Deliveries from './deliveries';
 import Home from './home';
 import Tables from './tables';
 import {Provider} from '../context';
@@ -16,6 +17,12 @@ const AppStack = createStackNavigator({
   },
   Tables: {
     screen: Tables,
+    navigationOptions: {
+      headerShown: false,
+    },
+  },
+  Deliveries: {
+    screen: Deliveries,
     navigationOptions: {
       headerShown: false,
     },
