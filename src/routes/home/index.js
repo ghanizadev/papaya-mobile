@@ -95,7 +95,7 @@ const Home = props => {
             <Button
             rounded
             style={styles.mainbutton}
-              onPress={()=> {props.navigation.navigate("Tables")}}
+              onPress={()=> {props.navigation.navigate("AddDeliveries")}}
             ><Text style={styles.mainbuttontext}>Nova Entrega</Text>
             </Button>
 

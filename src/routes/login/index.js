@@ -27,33 +27,15 @@ const LoginForm = props => {
   const state = useContext(Context);
 
   useEffect(() => {
-    const fetchTables = () => {
-      AsyncStorage.getItem('token')
-        .then(token => {
-          findAllTables(token).then(tables => {
-            state.setServerData(tables.data);
-          });
-        })
-        .catch(() => {
-          Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
-        });
-    };
+    detectHost();
 
-    detectHost()
-      .then(result => {
-        global.host = result;
-        AsyncStorage.setItem('host', result);
-        
-        const socket = io.connect(`http://${result}`);
+    const getData = async () => {
+      const store = await AsyncStorage.multiGet(['user', 'password']);
+      setUsername(store[0][1]);
+      setPassword(store[1][1]);
+    }
+    getData();
 
-        socket.on('update', () => {
-          console.log('Updating....');
-          fetchTables();
-        });
-      })
-      .catch(error => {
-        Alert.alert(error.title, error.message);
-      });
   }, [state]);
 
   return (
@@ -89,20 +71,37 @@ const LoginForm = props => {
           style={styles.loginButton}
           onPress={() => {
             Login(username, password)
-              .then(result => {
-                if (result.status === 200) {
-                  AsyncStorage.multiSet(
-                    [['user', username], ['token', result.data.access_token]],
-                    () => {
-                      navigation.navigate('Home');
-                    },
-                  );
+              .then(async result => {
+                if (result.status === 201) {
+                  await AsyncStorage.multiSet([['user', username], ['password', password], ['token', result.data.access_token]]);
+                  const addr = await AsyncStorage.getItem('host');
+
+                  const connection = io.connect(`http://${addr}:3000`);
+                  connection.on('update', () => {
+
+                    AsyncStorage.getItem('token')
+                    .then(token => {
+                      findAllTables(token).then(tables => {
+                        state.setServerData(tables.data);
+                      });
+                    })
+                    .catch(() => {
+                      Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+                    });
+
+                  })
+                  navigation.navigate('Home');
+                } else if (result.status === 404) {
+                  Alert.alert('Acesso restrito', 'Não cadastrado');
+                  console.log(result.data)
                 } else if (result.status === 403) {
                   Alert.alert('Login', 'Usuário e/ou senha incorretos');
                 }
               })
-              .catch(error => {
+              .catch(async error => {
                 console.error(error);
+                await AsyncStorage.removeItem('host');
+
                 Alert.alert(
                   'Erro',
                   'Servidor indisponível, contacte o administrador (' +

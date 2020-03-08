@@ -4,9 +4,12 @@ import {createStackNavigator} from 'react-navigation-stack';
 import LoginForm from './login';
 import Settings from './settings';
 import Deliveries from './deliveries';
+import AddDeliveries from './deliveries/add';
 import Home from './home';
 import Tables from './tables';
 import {Provider} from '../context';
+
+global.host = '192.168.0.16';
 
 const AppStack = createStackNavigator({
   Home: {
@@ -23,6 +26,12 @@ const AppStack = createStackNavigator({
   },
   Deliveries: {
     screen: Deliveries,
+    navigationOptions: {
+      headerShown: false,
+    },
+  },
+  AddDeliveries: {
+    screen: AddDeliveries,
     navigationOptions: {
       headerShown: false,
     },
