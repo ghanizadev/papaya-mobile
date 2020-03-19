@@ -1,0 +1,15 @@
+{
+    "main": {
+        "background": "#fdfdfd",
+        "foreground": "#ffbc2d",
+        "statusbar": "#e39d07",
+        "detail": "tomato",
+        "button": { "active": "#ed9140", "inactive": "lightgray"},
+        "title": "#fdfdfd",
+        "subtitle": "#ffffff",
+        "text": {"light": "#fdfdfd", "medium": "gray", "dark": "#444"},
+        "icon": {"light": "#fdfdfd", "dark": "#333"},
+        "border": "lightgray",
+        "close": "tomato"
+    }
+}
