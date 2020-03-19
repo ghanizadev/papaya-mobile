@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   Container,
   Content,
@@ -15,22 +15,28 @@ import {Image, StyleSheet, Alert} from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import logo from '../../assets/images/logo.png';
 import {Login, detectHost} from '../../functions';
+import io from 'socket.io-client';
+import {Context} from '../../context';
+import {findAllTables} from '../../functions';
 
 const LoginForm = props => {
   const {navigation} = props;
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('jf.melo6@gmail.com');
+  const [password, setPassword] = useState('td4df2g5wp');
+
+  const state = useContext(Context);
 
   useEffect(() => {
-    detectHost()
-      .then(result => {
-        global.host = result;
-        AsyncStorage.setItem('host', result);
-      })
-      .catch(error => {
-        Alert.alert(error);
-      });
-  }, []);
+    detectHost();
+
+    const getData = async () => {
+      const store = await AsyncStorage.multiGet(['user', 'password']);
+      setUsername(store[0][1]);
+      setPassword(store[1][1]);
+    }
+    getData();
+
+  }, [state]);
 
   return (
     <Container style={styles.container}>
@@ -45,12 +51,17 @@ const LoginForm = props => {
               autoCapitalize="none"
               keyboardType="email-address"
               onChangeText={setUsername}
+              value={username}
             />
           </Item>
           <Item fixedLabel last>
             <Icon name="md-key" />
             <Label>Senha</Label>
-            <Input onChangeText={setPassword} secureTextEntry />
+            <Input
+              onChangeText={setPassword}
+              value={password}
+              secureTextEntry
+            />
           </Item>
         </Form>
       </Content>
@@ -60,26 +71,42 @@ const LoginForm = props => {
           style={styles.loginButton}
           onPress={() => {
             Login(username, password)
-              .then(result => {
-                if (result.status === 200) {
-                  AsyncStorage.multiSet(
-                    [['user', username], ['token', result.data.access_token]],
-                    () => {
-                      navigation.navigate('Home');
-                    },
-                  );
+              .then(async result => {
+                if (result.status === 201) {
+                  await AsyncStorage.multiSet([['user', username], ['password', password], ['token', result.data.access_token]]);
+                  const addr = await AsyncStorage.getItem('host');
+
+                  const connection = io.connect(`http://${addr}:3000`);
+                  connection.on('update', () => {
+
+                    AsyncStorage.getItem('token')
+                    .then(token => {
+                      findAllTables(token).then(tables => {
+                        state.setServerData(tables.data);
+                      });
+                    })
+                    .catch(() => {
+                      Alert.alert('Erro', 'Erro ao requerer a lista de mesas');
+                    });
+
+                  })
+                  navigation.navigate('Home');
+                } else if (result.status === 404) {
+                  Alert.alert('Acesso restrito', 'Não cadastrado');
+                  console.log(result.data)
                 } else if (result.status === 403) {
-                  Alert.alert(
-                    'Login',
-                    'Usuário e/ou senha incorretosyarn add @react-native',
-                  );
+                  Alert.alert('Login', 'Usuário e/ou senha incorretos');
                 }
               })
-              .catch(error => {
-                console.log(error);
+              .catch(async error => {
+                console.error(error);
+                await AsyncStorage.removeItem('host');
+
                 Alert.alert(
                   'Erro',
-                  'Servidor indisponível, contacte o administrador',
+                  'Servidor indisponível, contacte o administrador (' +
+                    error +
+                    ')',
                 );
               });
           }}>

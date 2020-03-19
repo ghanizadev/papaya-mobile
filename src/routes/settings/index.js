@@ -1,7 +1,6 @@
 import React from 'react';
 import {View} from 'react-native';
 import {Text, Button} from 'native-base';
-import AsyncStorage from '@react-native-community/async-storage';
 
 const Settings = props => {
   const {navigation} = props;
@@ -11,11 +10,7 @@ const Settings = props => {
       <Button
         rounded
         onPress={() => {
-          AsyncStorage.getItem('timer').then(result => {
-            clearInterval(result);
-            global.updatable = false;
-            navigation.navigate('SignIn');
-          });
+          navigation.navigate('SignIn');
         }}>
         <Text>Sair</Text>
       </Button>
